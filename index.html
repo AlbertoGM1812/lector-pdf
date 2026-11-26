@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <title>Lector PDF</title>
+    <meta name="description" content="Lee tus PDFs como un libro en el iPad" />
+    <meta name="theme-color" content="#f7f3ea" />
+    <!-- Para que funcione como app al añadirla a la pantalla de inicio del iPad -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Lector PDF" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <link rel="icon" type="image/png" href="./icono-192.png" />
+  </head>
+  <body>
+    <header id="barra-superior" class="barra">
+      <button id="btn-abrir" class="boton" type="button">Abrir PDF</button>
+      <h1 id="titulo">Lector PDF</h1>
+      <button id="btn-ajustes" class="boton" type="button" aria-label="Ajustes de letra" aria-expanded="false">Aa</button>
+    </header>
+
+    <section id="ajustes" class="panel" hidden>
+      <label class="fila">
+        <span>Tamaño</span>
+        <input id="tam-letra" type="range" min="14" max="34" step="1" />
+        <output id="tam-valor"></output>
+      </label>
+      <div class="fila">
+        <span>Letra</span>
+        <div class="opciones" id="opciones-fuente">
+          <button type="button" data-fuente="serif" class="opcion fuente-serif">Clásica</button>
+          <button type="button" data-fuente="sans" class="opcion fuente-sans">Moderna</button>
+        </div>
+      </div>
+      <div class="fila">
+        <span>Fondo</span>
+        <div class="opciones" id="opciones-tema">
+          <button type="button" data-tema="dia" class="opcion muestra-dia">Día</button>
+          <button type="button" data-tema="sepia" class="opcion muestra-sepia">Sepia</button>
+          <button type="button" data-tema="noche" class="opcion muestra-noche">Noche</button>
+        </div>
+      </div>
+      <div class="fila">
+        <span>Color de letra</span>
+        <div class="opciones" id="opciones-color">
+          <button type="button" data-color="" class="opcion">Automático</button>
+          <input id="color-letra" type="color" aria-label="Elegir color de letra" />
+        </div>
+      </div>
+      <label class="fila">
+        <span>Interlineado</span>
+        <input id="interlineado" type="range" min="1.2" max="2" step="0.1" />
+        <output id="interlineado-valor"></output>
+      </label>
+    </section>
+
+    <main id="marco">
+      <div id="bienvenida">
+        <p class="grande">Lee tus PDFs como un libro.</p>
+        <p>Toca <strong>Abrir PDF</strong> y elige un archivo en la app Archivos.
+          El PDF no se guarda aquí; solo se recuerda la página en la que te quedaste.</p>
+        <button id="btn-abrir-grande" class="boton principal" type="button">Abrir un PDF</button>
+        <p id="estado" class="estado" role="status"></p>
+      </div>
+      <article id="contenido" lang="es"></article>
+    </main>
+
+    <footer id="barra-inferior" class="barra" hidden>
+      <input id="avance" type="range" min="1" max="1" value="1" aria-label="Avance del libro" />
+      <span id="contador"></span>
+    </footer>
+
+    <input id="selector" type="file" accept="application/pdf,.pdf" hidden />
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

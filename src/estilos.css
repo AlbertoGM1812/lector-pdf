@@ -1,0 +1,373 @@
+/* ---------- Temas (colores) ---------- */
+:root {
+  --fondo: #f7f3ea;
+  --fondo-barra: rgba(247, 243, 234, 0.94);
+  --texto: #1f1d1a;
+  --texto-suave: #6b655b;
+  --borde: rgba(0, 0, 0, 0.12);
+  --acento: #8a5a2b;
+  --lomo: rgba(0, 0, 0, 0.08);
+  --tam-letra: 20px;
+  --interlineado: 1.5;
+  --fuente-libro: 'Iowan Old Style', 'Palatino', Georgia, 'Times New Roman', serif;
+  --alto-barra: 52px;
+  --alto-barra-inferior: 56px;
+  color-scheme: light;
+}
+:root[data-tema='sepia'] {
+  --fondo: #efe2c6;
+  --fondo-barra: rgba(239, 226, 198, 0.94);
+  --texto: #4a3b28;
+  --texto-suave: #7d6a50;
+  --borde: rgba(74, 59, 40, 0.18);
+  --acento: #8a5a2b;
+  --lomo: rgba(74, 59, 40, 0.12);
+}
+:root[data-tema='noche'] {
+  --fondo: #141414;
+  --fondo-barra: rgba(20, 20, 20, 0.94);
+  --texto: #d8d2c4;
+  --texto-suave: #8f897d;
+  --borde: rgba(255, 255, 255, 0.14);
+  --acento: #d9a35f;
+  --lomo: rgba(0, 0, 0, 0.5);
+  color-scheme: dark;
+}
+:root[data-fuente='sans'] {
+  --fuente-libro: -apple-system, 'Helvetica Neue', 'Segoe UI', Roboto, Arial, sans-serif;
+}
+
+/* ---------- Base ---------- */
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: -apple-system, 'Helvetica Neue', 'Segoe UI', Roboto, Arial, sans-serif;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.25s, color 0.25s;
+}
+body {
+  overscroll-behavior: none;
+  /* Evita el zoom con doble toque, que estorba al pasar páginas rápido */
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+[hidden] {
+  display: none !important;
+}
+
+/* ---------- Barras ---------- */
+.barra {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-left: max(14px, env(safe-area-inset-left));
+  padding-right: max(14px, env(safe-area-inset-right));
+  background: var(--fondo-barra);
+  transition: opacity 0.25s;
+}
+#barra-superior {
+  top: 0;
+  height: calc(var(--alto-barra) + env(safe-area-inset-top));
+  padding-top: env(safe-area-inset-top);
+  border-bottom: 1px solid var(--borde);
+}
+#barra-inferior {
+  bottom: 0;
+  height: calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  border-top: 1px solid var(--borde);
+}
+body.sin-barras .barra {
+  opacity: 0;
+  pointer-events: none;
+}
+#titulo {
+  flex: 1;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.boton {
+  font: inherit;
+  font-size: 16px;
+  color: var(--acento);
+  background: transparent;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  padding: 7px 14px;
+  min-height: 38px;
+  cursor: pointer;
+}
+.boton:active {
+  opacity: 0.6;
+}
+.boton.principal {
+  background: var(--acento);
+  color: var(--fondo);
+  border: none;
+  font-size: 18px;
+  padding: 12px 26px;
+  margin-top: 8px;
+}
+#btn-ajustes {
+  font-family: Georgia, serif;
+  font-size: 18px;
+  min-width: 48px;
+}
+
+/* ---------- Panel de ajustes ---------- */
+.panel {
+  position: fixed;
+  z-index: 20;
+  top: calc(var(--alto-barra) + env(safe-area-inset-top) + 8px);
+  right: max(12px, env(safe-area-inset-right));
+  width: min(380px, calc(100vw - 24px));
+  padding: 14px 16px;
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  display: grid;
+  gap: 14px;
+}
+.fila {
+  display: grid;
+  grid-template-columns: 96px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+}
+.fila > span {
+  color: var(--texto-suave);
+}
+.fila input[type='range'] {
+  width: 100%;
+}
+.fila output {
+  min-width: 44px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--texto-suave);
+}
+.opciones {
+  grid-column: 2 / 4;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.opcion {
+  font: inherit;
+  font-size: 15px;
+  padding: 7px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--borde);
+  background: transparent;
+  color: var(--texto);
+  cursor: pointer;
+}
+.opcion.activa,
+#color-letra.activa {
+  outline: 2px solid var(--acento);
+  outline-offset: 1px;
+}
+.fuente-serif {
+  font-family: 'Iowan Old Style', Palatino, Georgia, serif;
+}
+.muestra-dia {
+  background: #f7f3ea;
+  color: #1f1d1a;
+}
+.muestra-sepia {
+  background: #efe2c6;
+  color: #4a3b28;
+}
+.muestra-noche {
+  background: #141414;
+  color: #d8d2c4;
+}
+#color-letra {
+  width: 44px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  background: transparent;
+}
+
+/* ---------- Libro ---------- */
+#marco {
+  position: fixed;
+  left: env(safe-area-inset-left);
+  right: env(safe-area-inset-right);
+  top: calc(var(--alto-barra) + env(safe-area-inset-top));
+  bottom: calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom));
+  overflow: hidden;
+}
+body:not(.leyendo) #marco {
+  bottom: env(safe-area-inset-bottom);
+}
+/* Sombra en el centro, como el lomo de un libro abierto */
+#marco.doble::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 40px;
+  transform: translateX(-50%);
+  background: linear-gradient(to right, transparent, var(--lomo) 50%, transparent);
+  pointer-events: none;
+}
+
+#contenido {
+  position: absolute;
+  top: 28px;
+  bottom: 28px;
+  column-fill: auto;
+  font-family: var(--fuente-libro);
+  font-size: var(--tam-letra);
+  line-height: var(--interlineado);
+  color: var(--color-texto-libro, var(--texto));
+  text-align: justify;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+  overflow-wrap: break-word;
+  transition: transform 0.3s ease;
+  will-change: transform;
+}
+#contenido.sin-animar {
+  transition: none;
+}
+#contenido p {
+  margin: 0;
+  text-indent: 1.4em;
+}
+#contenido p + p {
+  margin-top: 0.35em;
+}
+#contenido h2 {
+  font-size: 1.3em;
+  line-height: 1.25;
+  text-align: center;
+  margin: 0.8em 0 0.7em;
+  font-weight: 600;
+  -webkit-hyphens: manual;
+  hyphens: manual;
+  break-after: avoid;
+}
+#contenido h2 + p {
+  text-indent: 0;
+}
+.marca {
+  display: inline;
+}
+.fin-libro {
+  height: 0;
+}
+
+/* ---------- Bienvenida ---------- */
+#bienvenida {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  max-width: 560px;
+  margin: 0 auto;
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--texto-suave);
+}
+#bienvenida .grande {
+  font-family: var(--fuente-libro);
+  font-size: 30px;
+  color: var(--texto);
+  margin: 0 0 8px;
+}
+.estado {
+  min-height: 3em;
+  margin-top: 18px;
+  color: var(--texto);
+}
+
+/* ---------- Barra de avance ---------- */
+#avance {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 28px;
+  background: transparent;
+  --lleno: 0%;
+}
+#avance::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--acento) var(--lleno), var(--borde) var(--lleno));
+}
+#avance::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  margin-top: -9px;
+  border-radius: 50%;
+  background: var(--fondo);
+  border: 2px solid var(--acento);
+}
+#avance::-moz-range-track {
+  height: 4px;
+  background: var(--borde);
+}
+#avance::-moz-range-progress {
+  height: 4px;
+  background: var(--acento);
+}
+#contador {
+  font-size: 14px;
+  color: var(--texto-suave);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  min-width: 170px;
+  text-align: right;
+}
+
+/* ---------- Aviso ---------- */
+#aviso {
+  position: fixed;
+  z-index: 30;
+  left: 50%;
+  bottom: calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom) + 16px);
+  transform: translate(-50%, 10px);
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--texto);
+  color: var(--fondo);
+  font-size: 15px;
+  opacity: 0;
+  transition: opacity 0.3s, transform 0.3s;
+  pointer-events: none;
+}
+#aviso.visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
