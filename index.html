@@ -16,7 +16,7 @@
   </head>
   <body>
     <header id="barra-superior" class="barra">
-      <button id="btn-abrir" class="boton" type="button">Abrir PDF</button>
+      <button id="btn-inicio" class="boton" type="button">‹ Inicio</button>
       <h1 id="titulo">Lector PDF</h1>
       <button id="btn-ajustes" class="boton" type="button" aria-label="Ajustes de letra" aria-expanded="false">Aa</button>
     </header>
@@ -57,12 +57,36 @@
     </section>
 
     <main id="marco">
-      <div id="bienvenida">
-        <p class="grande">Lee tus PDFs como un libro.</p>
-        <p>Toca <strong>Abrir PDF</strong> y elige un archivo en la app Archivos.
-          El PDF no se guarda aquí; solo se recuerda la página en la que te quedaste.</p>
-        <button id="btn-abrir-grande" class="boton principal" type="button">Abrir un PDF</button>
-        <p id="estado" class="estado" role="status"></p>
+      <div id="inicio">
+        <div class="inicio-dentro">
+          <section class="estadisticas" aria-label="Tus estadísticas de lectura">
+            <div class="tarjeta-dato" id="dato-racha">
+              <span class="icono-dato" aria-hidden="true">🔥</span>
+              <strong id="racha-valor">0</strong>
+              <span id="racha-texto">días seguidos</span>
+            </div>
+            <div class="tarjeta-dato">
+              <span class="icono-dato" aria-hidden="true">📖</span>
+              <strong id="hoy-valor">0</strong>
+              <span>páginas hoy</span>
+            </div>
+            <div class="tarjeta-dato">
+              <span class="icono-dato" aria-hidden="true">📚</span>
+              <strong id="total-valor">0</strong>
+              <span>páginas en total</span>
+            </div>
+          </section>
+
+          <button id="btn-abrir-grande" class="boton principal" type="button">Abrir un PDF</button>
+          <p id="estado" class="estado" role="status"></p>
+
+          <section id="recientes" aria-labelledby="titulo-recientes">
+            <h2 id="titulo-recientes">Lecturas recientes</h2>
+            <p id="sin-recientes" class="nota">Aún no has leído nada aquí. Abre un PDF desde la app Archivos para empezar.</p>
+            <ul id="lista-recientes"></ul>
+            <p class="nota">Los PDFs no se guardan en la app: al tocar un libro se abre Archivos para que lo elijas, y sigues donde lo dejaste.</p>
+          </section>
+        </div>
       </div>
       <article id="contenido" lang="es"></article>
     </main>

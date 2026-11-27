@@ -47,14 +47,17 @@ export class Libro {
     const margen = Math.round(Math.max(20, Math.min(56, ancho * 0.045)));
     const anchoTexto = ancho - margen * 2;
     const separacion = margen * 2;
+    const anchoColumna = (anchoTexto - separacion * (this.columnasPorPliego - 1)) / this.columnasPorPliego;
     const s = this.contenido.style;
     s.left = margen + 'px';
     s.width = anchoTexto + 'px';
     s.columnCount = String(this.columnasPorPliego);
+    // Importante para el iPad en vertical: Safari no reparte el texto en páginas
+    // si solo hay "1 columna" sin ancho fijo. Con el ancho de columna sí lo hace.
+    s.columnWidth = anchoColumna + 'px';
     s.columnGap = separacion + 'px';
     this.marco.classList.toggle('doble', doble);
 
-    const anchoColumna = (anchoTexto - separacion * (this.columnasPorPliego - 1)) / this.columnasPorPliego;
     this.paso = anchoColumna + separacion;
 
     this.totalColumnas = Math.max(1, this.columnaDe(this.fin) + 1);

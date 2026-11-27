@@ -1,6 +1,7 @@
 // Guarda y lee el progreso de lectura en el almacenamiento local del navegador
-// (localStorage). Los PDFs NO se guardan: solo { llave, pagina, fecha }
-// y, para volver al punto exacto, el número de párrafo.
+// (localStorage). Los PDFs NO se guardan: solo { llave, pagina, fecha }, el número
+// de párrafo (para volver al punto exacto) y, para la lista de lecturas recientes,
+// el título, el nombre del archivo y el porcentaje leído.
 
 const CLAVE = 'lector-pdf:progreso';
 
@@ -12,19 +13,39 @@ function leerTodo() {
   }
 }
 
-/** @returns {{ llave: string, pagina: number, parrafo?: number, fecha: string } | null} */
-export function leerProgreso(llave) {
-  return leerTodo()[llave] || null;
-}
-
-export function guardarProgreso(llave, pagina, parrafo) {
-  const todo = leerTodo();
-  todo[llave] = { llave, pagina, parrafo, fecha: new Date().toISOString() };
+function escribirTodo(todo) {
   try {
     localStorage.setItem(CLAVE, JSON.stringify(todo));
   } catch {
     // Almacenamiento lleno o bloqueado (por ejemplo, modo privado): no pasa nada.
   }
+}
+
+/**
+ * @typedef {{ llave: string, pagina: number, parrafo?: number, fecha: string,
+ *   titulo?: string, archivo?: string, porcentaje?: number, paginasPdf?: number }} Progreso
+ * @returns {Progreso | null}
+ */
+export function leerProgreso(llave) {
+  return leerTodo()[llave] || null;
+}
+
+/** @param {Omit<Progreso, 'fecha'>} datos */
+export function guardarProgreso(datos) {
+  const todo = leerTodo();
+  todo[datos.llave] = { ...todo[datos.llave], ...datos, fecha: new Date().toISOString() };
+  escribirTodo(todo);
+}
+
+/** Lecturas recientes, de la más nueva a la más antigua. */
+export function lecturasRecientes() {
+  return Object.values(leerTodo()).sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+}
+
+export function quitarLectura(llave) {
+  const todo = leerTodo();
+  delete todo[llave];
+  escribirTodo(todo);
 }
 
 /**

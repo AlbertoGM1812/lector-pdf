@@ -226,7 +226,7 @@ body:not(.leyendo) #marco {
   bottom: env(safe-area-inset-bottom);
 }
 /* Sombra en el centro, como el lomo de un libro abierto */
-#marco.doble::after {
+body.leyendo #marco.doble::after {
   content: '';
   position: absolute;
   top: 0;
@@ -284,31 +284,155 @@ body:not(.leyendo) #marco {
   height: 0;
 }
 
-/* ---------- Bienvenida ---------- */
-#bienvenida {
+/* ---------- Pantalla de inicio ---------- */
+#inicio {
   height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  -webkit-user-select: none;
+}
+.inicio-dentro {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+.estadisticas {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.tarjeta-dato {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  gap: 2px;
+  padding: 14px 8px;
+  border: 1px solid var(--borde);
+  border-radius: 14px;
   text-align: center;
-  padding: 24px;
-  max-width: 560px;
-  margin: 0 auto;
-  font-size: 17px;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.3;
   color: var(--texto-suave);
 }
-#bienvenida .grande {
-  font-family: var(--fuente-libro);
+.tarjeta-dato strong {
   font-size: 30px;
+  line-height: 1.1;
   color: var(--texto);
-  margin: 0 0 8px;
+  font-variant-numeric: tabular-nums;
+}
+.icono-dato {
+  font-size: 22px;
+}
+/* Si hoy aún no has leído, la llama se ve apagada */
+#dato-racha.apagada .icono-dato {
+  filter: grayscale(1);
+  opacity: 0.5;
+}
+#inicio .boton.principal {
+  align-self: center;
+  margin-top: 22px;
 }
 .estado {
-  min-height: 3em;
-  margin-top: 18px;
+  min-height: 1.5em;
+  margin: 12px 0 0;
+  text-align: center;
+  font-size: 16px;
   color: var(--texto);
+}
+#recientes h2 {
+  font-family: var(--fuente-libro);
+  font-size: 22px;
+  font-weight: 600;
+  margin: 18px 0 10px;
+}
+#lista-recientes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.lectura {
+  position: relative;
+}
+.lectura-abrir {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  padding: 14px 52px 14px 16px;
+  font: inherit;
+  text-align: left;
+  color: var(--texto);
+  background: transparent;
+  border: 1px solid var(--borde);
+  border-radius: 14px;
+  cursor: pointer;
+}
+.lectura-abrir:active {
+  opacity: 0.6;
+}
+.lectura-abrir strong {
+  grid-column: 1 / 3;
+  font-family: var(--fuente-libro);
+  font-size: 18px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lectura-detalle {
+  grid-column: 1 / 3;
+  font-size: 14px;
+  color: var(--texto-suave);
+}
+.lectura-abierto {
+  grid-column: 1 / 3;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--acento);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.lectura-barra {
+  align-self: center;
+  height: 4px;
+  border-radius: 2px;
+  margin-top: 6px;
+  background: linear-gradient(to right, var(--acento) var(--pct), var(--borde) var(--pct));
+}
+.lectura-pct {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--texto-suave);
+  font-variant-numeric: tabular-nums;
+}
+.lectura-quitar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 36px;
+  height: 36px;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--texto-suave);
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.nota {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--texto-suave);
+  margin: 12px 0 0;
+}
+@media (max-width: 480px) {
+  .tarjeta-dato strong {
+    font-size: 24px;
+  }
 }
 
 /* ---------- Barra de avance ---------- */

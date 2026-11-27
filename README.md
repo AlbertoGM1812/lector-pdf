@@ -14,6 +14,10 @@ de inicio y usar sin internet) para leer PDFs en el iPad como si fueran un libro
     un hash SHA-256 de los bytes del archivo.
   - `pagina`: página del PDF original en la que vas.
   - `parrafo`: número de párrafo, para volver al punto exacto aunque cambies la letra.
+- Pantalla de inicio con tus lecturas recientes (título, página y porcentaje). Al tocar
+  un libro se abre Archivos para elegirlo otra vez, porque el PDF no se guarda.
+- Racha de días seguidos leyendo (un día cuenta si pasas al menos una página nueva) y
+  contador de páginas leídas hoy y en total.
 - Solo funciona con PDFs que tienen texto. Los escaneados (fotos de páginas) no se pueden leer.
 
 ## Cómo usarla en el ordenador

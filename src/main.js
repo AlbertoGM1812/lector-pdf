@@ -6,7 +6,14 @@ import urlTrabajador from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
 import { registerSW } from 'virtual:pwa-register';
 import { extraerBloques } from './extraer.js';
 import { Libro } from './libro.js';
-import { leerProgreso, guardarProgreso, llaveDelLibro } from './progreso.js';
+import {
+  leerProgreso,
+  guardarProgreso,
+  llaveDelLibro,
+  lecturasRecientes,
+  quitarLectura,
+} from './progreso.js';
+import { sumarPaginas, resumen } from './estadisticas.js';
 
 // El "worker" (trabajador) lee el PDF en segundo plano sin congelar la pantalla.
 pdfjs.GlobalWorkerOptions.workerSrc = urlTrabajador;
@@ -18,6 +25,12 @@ const $ = (id) => document.getElementById(id);
 const marco = $('marco');
 const contenido = $('contenido');
 const libro = new Libro(marco, contenido);
+if (import.meta.env.DEV) window.__libro = libro; // solo para depurar en el ordenador
+
+/** Libro abierto ahora: { llave, tarea, titulo, archivo, paginasPdf } */
+let libroAbierto = null;
+/** ¿Se está viendo el libro (y no la pantalla de inicio)? */
+const leyendo = () => !!libroAbierto && $('inicio').hidden;
 
 // ---------- Preferencias de lectura ----------
 const PREF = 'lector-pdf:preferencias';
@@ -50,7 +63,7 @@ function aplicarPreferencias(remaquetar = true) {
   try {
     localStorage.setItem(PREF, JSON.stringify(prefs));
   } catch {}
-  if (remaquetar && libroAbierto) libro.maquetar();
+  if (remaquetar && leyendo()) maquetarDeNuevo();
 }
 
 function colorPorDefecto() {
@@ -101,11 +114,14 @@ $('btn-ajustes').addEventListener('click', () => {
 });
 
 // ---------- Abrir un PDF ----------
-let libroAbierto = null; // { llave, tarea }
 const selector = $('selector');
 const abrirSelector = () => selector.click();
-$('btn-abrir').addEventListener('click', abrirSelector);
 $('btn-abrir-grande').addEventListener('click', abrirSelector);
+$('btn-inicio').addEventListener('click', () => {
+  guardarAhora();
+  $('ajustes').hidden = true;
+  mostrarInicio();
+});
 
 selector.addEventListener('change', async () => {
   const archivo = selector.files?.[0];
@@ -119,7 +135,8 @@ function mostrarEstado(texto) {
 
 async function abrirArchivo(archivo) {
   $('ajustes').hidden = true;
-  mostrarBienvenida(true);
+  if (libroAbierto) guardarAhora();
+  mostrarInicio();
   mostrarEstado('Abriendo «' + archivo.name + '»…');
   try {
     const bytes = new Uint8Array(await archivo.arrayBuffer());
@@ -162,12 +179,11 @@ async function abrirArchivo(archivo) {
     const titulo = info?.info?.Title?.trim() || archivo.name.replace(/\.pdf$/i, '');
     const idioma = info?.info?.Language;
     contenido.lang = typeof idioma === 'string' && idioma ? idioma : 'es';
-    $('titulo').textContent = titulo;
-    document.title = titulo + ' · Lector PDF';
 
     libro.cargar(crearElementos(bloques));
-    libroAbierto = { llave, tarea };
-    mostrarBienvenida(false);
+    libroAbierto = { llave, tarea, titulo, archivo: archivo.name, paginasPdf: pdf.numPages };
+    mostrarEstado('');
+    mostrarLectura();
     await esperarFuentes();
     libro.maquetar();
 
@@ -179,9 +195,11 @@ async function abrirArchivo(archivo) {
     } else {
       libro.ir(0, false);
     }
+    paginaMaxVista = libro.pliego;
+    guardarAhora();
   } catch (error) {
     console.error(error);
-    mostrarBienvenida(true);
+    mostrarInicio();
     if (error?.name === 'PasswordException') mostrarEstado('No se abrió: falta la contraseña.');
     else if (error?.name === 'InvalidPDFException') mostrarEstado('Ese archivo no parece un PDF válido.');
     else mostrarEstado('No se pudo abrir el PDF: ' + (error?.message || error));
@@ -208,11 +226,26 @@ function crearElementos(bloques) {
   return fragmento;
 }
 
-function mostrarBienvenida(si) {
-  $('bienvenida').hidden = !si;
-  contenido.hidden = si;
-  $('barra-inferior').hidden = si || !libroAbierto;
-  document.body.classList.toggle('leyendo', !si);
+function mostrarInicio() {
+  $('inicio').hidden = false;
+  contenido.hidden = true;
+  $('barra-inferior').hidden = true;
+  $('btn-inicio').hidden = true;
+  $('titulo').textContent = 'Lector PDF';
+  document.title = 'Lector PDF';
+  document.body.classList.remove('leyendo', 'sin-barras');
+  pintarInicio();
+}
+
+function mostrarLectura() {
+  if (!libroAbierto) return;
+  $('inicio').hidden = true;
+  contenido.hidden = false;
+  $('barra-inferior').hidden = false;
+  $('btn-inicio').hidden = false;
+  $('titulo').textContent = libroAbierto.titulo;
+  document.title = libroAbierto.titulo + ' · Lector PDF';
+  document.body.classList.add('leyendo');
 }
 
 async function esperarFuentes() {
@@ -233,6 +266,97 @@ function avisar(texto) {
   aviso.classList.add('visible');
   clearTimeout(temporizadorAviso);
   temporizadorAviso = setTimeout(() => aviso.classList.remove('visible'), 3000);
+}
+
+// ---------- Pantalla de inicio: estadísticas y lecturas recientes ----------
+function pintarInicio() {
+  const { racha, hoy, total, rachaHoy } = resumen();
+  $('racha-valor').textContent = String(racha);
+  $('racha-texto').textContent =
+    (racha === 1 ? 'día seguido' : 'días seguidos') +
+    (racha > 0 && !rachaHoy ? ' · lee hoy para no perderla' : '');
+  $('dato-racha').classList.toggle('apagada', !rachaHoy);
+  $('hoy-valor').textContent = String(hoy);
+  $('total-valor').textContent = String(total);
+
+  const lecturas = lecturasRecientes();
+  $('sin-recientes').hidden = lecturas.length > 0;
+  $('lista-recientes').replaceChildren(...lecturas.map(crearTarjetaLectura));
+}
+
+function crearTarjetaLectura(l) {
+  const li = document.createElement('li');
+  li.className = 'lectura';
+
+  const boton = document.createElement('button');
+  boton.type = 'button';
+  boton.className = 'lectura-abrir';
+  const titulo = document.createElement('strong');
+  titulo.textContent = l.titulo || l.archivo || 'Libro sin título';
+  const detalle = document.createElement('span');
+  detalle.className = 'lectura-detalle';
+  const partes = [`Página ${l.pagina}${l.paginasPdf ? ' de ' + l.paginasPdf : ''} del PDF`];
+  if (l.archivo && l.archivo.replace(/\.pdf$/i, '') !== l.titulo) partes.push(l.archivo);
+  partes.push(haceCuanto(l.fecha));
+  detalle.textContent = partes.join(' · ');
+  const pct = Math.max(0, Math.min(100, l.porcentaje ?? 0));
+  const barra = document.createElement('span');
+  barra.className = 'lectura-barra';
+  barra.style.setProperty('--pct', pct + '%');
+  const pctTexto = document.createElement('span');
+  pctTexto.className = 'lectura-pct';
+  pctTexto.textContent = pct + '%';
+  if (libroAbierto?.llave === l.llave) {
+    const abierto = document.createElement('span');
+    abierto.className = 'lectura-abierto';
+    abierto.textContent = 'Abierto · toca para seguir';
+    boton.append(abierto);
+  }
+  boton.append(titulo, detalle, barra, pctTexto);
+  boton.addEventListener('click', () => abrirReciente(l));
+
+  const quitar = document.createElement('button');
+  quitar.type = 'button';
+  quitar.className = 'lectura-quitar';
+  quitar.setAttribute('aria-label', 'Quitar de la lista');
+  quitar.textContent = '×';
+  quitar.addEventListener('click', () => {
+    const nombre = titulo.textContent;
+    if (confirm(`¿Quitar «${nombre}» de tus lecturas recientes? Se olvidará dónde te quedaste.`)) {
+      quitarLectura(l.llave);
+      pintarInicio();
+    }
+  });
+
+  li.append(boton, quitar);
+  return li;
+}
+
+function abrirReciente(lectura) {
+  // Si ese libro ya está abierto, se vuelve a él directamente.
+  if (libroAbierto?.llave === lectura.llave) {
+    mostrarEstado('');
+    mostrarLectura();
+    maquetarDeNuevo();
+    return;
+  }
+  // Si no, hay que volver a elegir el archivo (los PDFs no se guardan en la app).
+  mostrarEstado(`Busca «${lectura.archivo || lectura.titulo}» en Archivos.`);
+  abrirSelector();
+}
+
+function haceCuanto(fechaIso) {
+  if (!fechaIso) return '';
+  const fecha = new Date(fechaIso);
+  const dias = Math.round((inicioDelDia(new Date()) - inicioDelDia(fecha)) / 86400000);
+  if (dias <= 0) return 'hoy';
+  if (dias === 1) return 'ayer';
+  if (dias < 7) return `hace ${dias} días`;
+  return fecha.toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function inicioDelDia(f) {
+  return new Date(f.getFullYear(), f.getMonth(), f.getDate()).getTime();
 }
 
 // ---------- Avance, contador y guardado ----------
@@ -257,15 +381,44 @@ libro.alCambiar = () => {
 };
 
 function guardarAhora() {
-  if (!libroAbierto) return;
-  guardarProgreso(libroAbierto.llave, libro.paginaPdfActual(), libro.bloqueActual());
+  if (!libroAbierto || !libro.totalColumnas || !leyendo()) return;
+  const ultima = Math.min(libro.primeraColumna + libro.columnasPorPliego, libro.totalColumnas);
+  guardarProgreso({
+    llave: libroAbierto.llave,
+    pagina: libro.paginaPdfActual(),
+    parrafo: libro.bloqueActual(),
+    titulo: libroAbierto.titulo,
+    archivo: libroAbierto.archivo,
+    paginasPdf: libroAbierto.paginasPdf,
+    porcentaje: Math.round((ultima / libro.totalColumnas) * 100),
+  });
 }
 
 avance.addEventListener('input', () => libro.ir(Number(avance.value) - 1, false));
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') guardarAhora();
+  // Al volver a la app (quizá otro día), se actualiza la pantalla de inicio.
+  else if (!leyendo()) pintarInicio();
 });
 window.addEventListener('pagehide', guardarAhora);
+
+// ---------- Contador de páginas leídas ----------
+// Solo cuentan las páginas nuevas al avanzar, no las que vuelves a ver.
+let paginaMaxVista = 0;
+
+function siguientePagina() {
+  libro.siguiente();
+  if (libro.pliego > paginaMaxVista) {
+    paginaMaxVista = libro.pliego;
+    const visibles = Math.min(libro.columnasPorPliego, libro.totalColumnas - libro.primeraColumna);
+    sumarPaginas(visibles);
+  }
+}
+
+function maquetarDeNuevo() {
+  libro.maquetar();
+  paginaMaxVista = libro.pliego;
+}
 
 // ---------- Pasar página: toques, deslizar y teclado ----------
 let inicioToque = null;
@@ -281,20 +434,21 @@ marco.addEventListener(
   { passive: true },
 );
 marco.addEventListener('touchend', (e) => {
-  if (!inicioToque || !libroAbierto) return;
+  if (!inicioToque || !leyendo() || $('inicio').contains(e.target)) return;
   const t = e.changedTouches[0];
   const dx = t.clientX - inicioToque.x;
   const dy = t.clientY - inicioToque.y;
   inicioToque = null;
   if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
     fueDeslizamiento = true;
-    if (dx < 0) libro.siguiente();
+    if (dx < 0) siguientePagina();
     else libro.anterior();
   }
 });
 
 marco.addEventListener('click', (e) => {
-  if (!libroAbierto || $('bienvenida').hidden === false) return;
+  // Los toques en la pantalla de inicio no pasan páginas.
+  if (!leyendo() || $('inicio').contains(e.target)) return;
   if (fueDeslizamiento) {
     fueDeslizamiento = false;
     return;
@@ -306,26 +460,42 @@ marco.addEventListener('click', (e) => {
   const r = marco.getBoundingClientRect();
   const x = (e.clientX - r.left) / r.width;
   if (x < 0.3) libro.anterior();
-  else if (x > 0.7) libro.siguiente();
+  else if (x > 0.7) siguientePagina();
   else document.body.classList.toggle('sin-barras');
 });
 
 document.addEventListener('keydown', (e) => {
-  if (!libroAbierto || e.target instanceof HTMLInputElement) return;
+  if (!leyendo() || e.target instanceof HTMLInputElement) return;
   if (['ArrowRight', 'PageDown', ' '].includes(e.key)) {
     e.preventDefault();
-    libro.siguiente();
+    siguientePagina();
   } else if (['ArrowLeft', 'PageUp'].includes(e.key)) {
     e.preventDefault();
     libro.anterior();
   }
 });
 
-// Al girar el iPad o cambiar el tamaño de la ventana, se vuelve a maquetar.
+// ---------- Girar el iPad ----------
+// Se vigila el tamaño real del área de lectura: en el iPad, al girar, el evento
+// "resize" a veces llega antes de que la pantalla tenga sus medidas nuevas.
 let temporizadorMaquetar;
-window.addEventListener('resize', () => {
+let tamanoAnterior = '';
+function alCambiarTamano() {
   clearTimeout(temporizadorMaquetar);
-  temporizadorMaquetar = setTimeout(() => libroAbierto && libro.maquetar(), 150);
+  temporizadorMaquetar = setTimeout(() => {
+    if (!leyendo()) return;
+    const tamano = marco.clientWidth + 'x' + marco.clientHeight;
+    if (tamano === tamanoAnterior) return;
+    tamanoAnterior = tamano;
+    maquetarDeNuevo();
+  }, 150);
+}
+window.addEventListener('resize', alCambiarTamano);
+window.addEventListener('orientationchange', () => {
+  alCambiarTamano();
+  setTimeout(alCambiarTamano, 500); // segunda comprobación, por si acaso
 });
+if ('ResizeObserver' in window) new ResizeObserver(alCambiarTamano).observe(marco);
 
 aplicarPreferencias(false);
+mostrarInicio();
